@@ -3,8 +3,17 @@ import google.generativeai as genai
 from PIL import Image
 
 # --- 1. IMPOSTAZIONI GRAFICHE DELLA PAGINA ---
-# layout="wide" usa tutto lo schermo del monitor, molto meglio per i PC dell'ufficio!
 st.set_page_config(page_title="Estrattore EAN", page_icon="📦", layout="wide")
+
+# --- INTESTAZIONE GRAFICA CON BANNER CENTRATO ---
+# Le 3 colonne servono a "schiacciare" il banner al centro. Proporzioni: 1 : 2 : 1
+col_spazio_sx, col_banner, col_spazio_dx = st.columns([1, 2, 1])
+with col_banner:
+    st.image("imm.png", use_container_width=True)
+
+st.title("📦 Estrattore Automazione: EAN & Quantità")
+st.markdown("Carica un documento (PDF o Immagine) e il vostro Fabio Virtuale genererà istantaneamente il file formattato per il tuo gestionale.")
+st.markdown("---")
 
 # --- APRE LA CASSAFORTE SEGRETA ---
 try:
@@ -31,22 +40,15 @@ def ottieni_modello():
 
 model = ottieni_modello()
 
-# --- INTESTAZIONE GRAFICA ---
-st.image("imm.png", width=700)
-st.title("📦 Estrattore Automazione: EAN & Quantità")
-st.markdown("Carica un documento (PDF o Immagine) e il vostro Fabio Virtuale genererà istantaneamente il file formattato per il tuo gestionale.")
-st.markdown("---") # Riga di separazione elegante
-
-# --- LAYOUT A DUE COLONNE ---
+# --- LAYOUT A DUE COLONNE (CARICAMENTO E RISULTATI) ---
 col_sinistra, col_destra = st.columns(2)
 
 with col_sinistra:
     st.subheader("📄 1. Carica il Documento")
-    # Ora accettiamo anche i PDF!
+    # Qui accettiamo sia immagini che PDF
     uploaded_file = st.file_uploader("Trascina qui un PDF, JPG o PNG", type=["jpg", "jpeg", "png", "pdf"])
     
     if uploaded_file is not None:
-        # Mostriamo l'anteprima solo se è un'immagine (i PDF sono pesanti da visualizzare)
         if uploaded_file.name.lower().endswith('.pdf'):
             st.info(f"✅ Documento PDF caricato correttamente: **{uploaded_file.name}**")
         else:
@@ -59,13 +61,13 @@ with col_destra:
     if uploaded_file is None:
         st.info("👈 Inizia caricando un documento nella colonna di sinistra.")
     else:
-        # Pulsante più grande e colorato
         if st.button("🚀 Avvia Estrazione", type="primary", use_container_width=True):
             if model is None:
                 st.error("Errore critico: Nessun modello AI disponibile.")
             else:
                 with st.spinner("🤖 L'IA sta leggendo il documento... attendi qualche secondo."):
                     
+                    # --- IL CERVELLO DELL'IA ---
                     prompt = """
                     Sei un estrattore di dati professionale. Guarda questo documento.
                     Contiene codici EAN (codici a barre) e le relative quantità.
@@ -80,9 +82,8 @@ with col_destra:
                     """
                     
                     try:
-                        # Prepariamo i dati in base a se è PDF o Immagine
+                        # Riconosce se passare il PDF o l'immagine a Gemini
                         if uploaded_file.name.lower().endswith('.pdf'):
-                            # Gemini sa leggere i PDF se gli passiamo i dati grezzi in questo modo:
                             document_part = {
                                 "mime_type": "application/pdf",
                                 "data": uploaded_file.getvalue()
@@ -91,17 +92,14 @@ with col_destra:
                         else:
                             input_dati = [prompt, image]
                             
-                        # Chiamata all'IA
                         response = model.generate_content(input_dati)
                         risultato = response.text.strip()
                         risultato = risultato.replace("```text", "").replace("```", "").strip()
                         
                         st.success("✅ Estrazione completata con successo!")
                         
-                        # Mostriamo il risultato in un bel riquadro
                         st.text_area("Anteprima Dati Estratti:", value=risultato, height=350)
                         
-                        # Pulsante di download
                         st.download_button(
                             label="📥 Scarica File TXT Pronto",
                             data=risultato,
