@@ -7,20 +7,23 @@ st.set_page_config(page_title="Estrattore Listini", page_icon="📄")
 st.title("Estrattore Codici a Barre e Prezzi 🚀")
 st.write("Carica la foto o lo screenshot del listino. L'Intelligenza Artificiale estrarrà i dati formattati pronti per l'uso.")
 
-# Inserisci qui la tua chiave API
-API_KEY = "AIzaSyAXSgzC4AyYsesK4Jb0QDyH_zYz4h_mZ7k" 
-genai.configure(api_key=API_KEY)
+# --- APRE LA CASSAFORTE SEGRETA ---
+# Qui il codice va a leggere la chiave che hai salvato in "Secrets"
+try:
+    API_KEY = st.secrets["GEMINI_API_KEY"]
+    genai.configure(api_key=API_KEY)
+except KeyError:
+    st.error("Errore: Non riesco a trovare la chiave. Assicurati di averla salvata nei Secrets di Streamlit come GEMINI_API_KEY = 'tua_chiave'")
+    st.stop()
 
 # --- FUNZIONE AUTO-SELEZIONE MODELLO ---
 @st.cache_resource
 def ottieni_modello():
     try:
-        # Cerca il modello Gemini 1.5 più aggiornato disponibile per la tua chiave
         for m in genai.list_models():
             if 'generateContent' in m.supported_generation_methods:
                 if 'gemini-1.5' in m.name:
                     return genai.GenerativeModel(m.name)
-        # Fallback se non trova l'1.5
         for m in genai.list_models():
             if 'generateContent' in m.supported_generation_methods and 'gemini' in m.name:
                 return genai.GenerativeModel(m.name)
@@ -30,7 +33,7 @@ def ottieni_modello():
 
 model = ottieni_modello()
 
-# --- CARICAMENTO FILE ---
+# --- CARICAMENTO E ANALISI ---
 uploaded_file = st.file_uploader("Scegli un'immagine (JPG, PNG)", type=["jpg", "jpeg", "png"])
 
 if uploaded_file is not None:
@@ -45,14 +48,14 @@ if uploaded_file is not None:
                 
                 prompt = """
                 Sei un estrattore di dati professionale. Guarda questa immagine.
-                Contiene codici a barre e prezzi.
+                Contiene codici EAN (codici a barre) e le relative quantità.
                 
                 ISTRUZIONI TASSATIVE:
-                1. Estrai tutte le coppie: Codice a barre (13 cifre) e Prezzo.
+                1. Estrai tutte le coppie: Codice EAN (13 cifre) e Quantità.
                 2. Scrivi una coppia per riga usando il separatore | (es: 8058664165889|4.00)
                 3. Correggi eventuali errori visivi (es. la stanghetta del cursore letta come '1').
-                4. I codici devono essere lunghi ESATTAMENTE 13 cifre. Se sono più lunghi, taglia l'inizio.
-                5. I prezzi devono usare il PUNTO per i decimali (es. 10.00, non 10,00). Se è intero (es. 4) scrivi 4.00.
+                4. I codici EAN devono essere lunghi ESATTAMENTE 13 cifre. Se sono più lunghi, taglia l'inizio.
+                5. Le quantità devono usare il PUNTO per i decimali (es. 10.00). Se la quantità è un numero intero (es. 4) scrivi 4.00.
                 6. RESTITUISCI SOLO LA LISTA, nessuna frase introduttiva.
                 """
                 
