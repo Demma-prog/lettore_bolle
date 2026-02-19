@@ -68,15 +68,15 @@ with col_destra:
                 with st.spinner("🤖 L'IA sta leggendo il documento... attendi qualche secondo."):
                     
                     # --- IL CERVELLO DELL'IA ---
-                    prompt = """
+                   prompt = """
                     Sei un estrattore di dati professionale. Guarda questo documento.
-                    Contiene codici EAN (codici a barre) e le relative quantità.
+                    Contiene codici a barre (EAN o interni) e le relative quantità.
                     
                     ISTRUZIONI TASSATIVE:
-                    1. Estrai tutte le coppie: Codice EAN (13 cifre) e Quantità.
-                    2. Scrivi una coppia per riga usando il separatore | (es: 8058664165889|4.00)
-                    3. Correggi eventuali errori visivi (es. la stanghetta del cursore letta come '1').
-                    4. I codici EAN devono essere lunghi ESATTAMENTE 13 cifre. Se sono più lunghi, taglia l'inizio.
+                    1. Estrai tutte le coppie: Codice e Quantità.
+                    2. Scrivi una coppia per riga usando il separatore | (es: 8058664165889|4.00, 12345678|2.00, 123456789|1.00)
+                    3. Correggi eventuali errori visivi (es. la stanghetta del cursore letta come '1' all'inizio del codice).
+                    4. LUNGHEZZA CODICI: I codici validi possono avere 8, 9 o 13 cifre. Estraili tutti mantenendo la loro lunghezza originale. SOLO se trovi un codice anomalo di 14 o 15 cifre (solitamente causato da un errore di lettura del cursore), rimuovi i numeri in eccesso all'inizio per riportarlo a 13 cifre.
                     5. Le quantità devono usare il PUNTO per i decimali (es. 10.00). Se la quantità è un numero intero (es. 4) scrivi 4.00.
                     6. RESTITUISCI SOLO LA LISTA, nessuna frase introduttiva.
                     """
