@@ -6,7 +6,6 @@ from PIL import Image
 st.set_page_config(page_title="Estrattore EAN", page_icon="📦", layout="wide")
 
 # --- INTESTAZIONE GRAFICA CON BANNER CENTRATO ---
-# Le 3 colonne servono a "schiacciare" il banner al centro. Proporzioni: 1 : 2 : 1
 col_spazio_sx, col_banner, col_spazio_dx = st.columns([1, 2, 1])
 with col_banner:
     st.image("imm.png", use_container_width=True)
@@ -45,7 +44,6 @@ col_sinistra, col_destra = st.columns(2)
 
 with col_sinistra:
     st.subheader("📄 1. Carica il Documento")
-    # Qui accettiamo sia immagini che PDF
     uploaded_file = st.file_uploader("Trascina qui un PDF, JPG o PNG", type=["jpg", "jpeg", "png", "pdf"])
     
     if uploaded_file is not None:
@@ -68,7 +66,7 @@ with col_destra:
                 with st.spinner("🤖 L'IA sta leggendo il documento... attendi qualche secondo."):
                     
                     # --- IL CERVELLO DELL'IA ---
-                   prompt = """
+                    prompt = """
                     Sei un estrattore di dati professionale. Guarda questo documento.
                     Contiene codici a barre (EAN o interni) e le relative quantità.
                     
@@ -82,7 +80,6 @@ with col_destra:
                     """
                     
                     try:
-                        # Riconosce se passare il PDF o l'immagine a Gemini
                         if uploaded_file.name.lower().endswith('.pdf'):
                             document_part = {
                                 "mime_type": "application/pdf",
