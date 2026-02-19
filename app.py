@@ -32,8 +32,9 @@ def ottieni_modello():
 model = ottieni_modello()
 
 # --- INTESTAZIONE GRAFICA ---
+st.image("imm.png", use_container_width=True)
 st.title("📦 Estrattore Automazione: EAN & Quantità")
-st.markdown("Carica un documento (PDF o Immagine) e l'IA genererà istantaneamente il file formattato per il tuo gestionale.")
+st.markdown("Carica un documento (PDF o Immagine) e il vostro Fabio Virtuale genererà istantaneamente il file formattato per il tuo gestionale.")
 st.markdown("---") # Riga di separazione elegante
 
 # --- LAYOUT A DUE COLONNE ---
