@@ -11,7 +11,7 @@ with col_banner:
     st.image("imm.png", use_container_width=True)
 
 st.title("📦 Estrattore Automazione: EAN & Quantità")
-st.markdown("Carica un documento (PDF o Immagine) e il vostro Fabio Virtuale genererà istantaneamente il file formattato per il tuo gestionale.")
+st.markdown("Carica un documento (PDF o Immagine) e scegli la modalità di estrazione dei dati.")
 st.markdown("---")
 
 # --- APRE LA CASSAFORTE SEGRETA ---
@@ -46,6 +46,14 @@ with col_sinistra:
     st.subheader("📄 1. Carica il Documento")
     uploaded_file = st.file_uploader("Trascina qui un PDF, JPG o PNG", type=["jpg", "jpeg", "png", "pdf"])
     
+    st.markdown("---")
+    st.subheader("⚙️ 2. Scegli la Modalità")
+    # --- NUOVO: SELETTORE DI MODALITÀ ---
+    modalita = st.radio(
+        "Cosa vuoi estrarre da questo documento?",
+        ("EAN + Quantità (Formato Gestionale TXT)", "Solo EAN (Lista semplice in CSV)")
+    )
+    
     if uploaded_file is not None:
         if uploaded_file.name.lower().endswith('.pdf'):
             st.info(f"✅ Documento PDF caricato correttamente: **{uploaded_file.name}**")
@@ -54,7 +62,7 @@ with col_sinistra:
             st.image(image, caption="Anteprima del documento", use_container_width=True)
 
 with col_destra:
-    st.subheader("⚡ 2. Estrazione Dati")
+    st.subheader("⚡ 3. Estrazione Dati")
     
     if uploaded_file is None:
         st.info("👈 Inizia caricando un documento nella colonna di sinistra.")
@@ -65,19 +73,36 @@ with col_destra:
             else:
                 with st.spinner("🤖 L'IA sta leggendo il documento... attendi qualche secondo."):
                     
-                    # --- IL CERVELLO DELL'IA ---
-                    prompt = """
-                    Sei un estrattore di dati professionale. Guarda questo documento.
-                    Contiene codici a barre (EAN o interni) e le relative quantità.
-                    
-                    ISTRUZIONI TASSATIVE:
-                    1. Estrai tutte le coppie: Codice e Quantità.
-                    2. Scrivi una coppia per riga usando il separatore | (es: 8058664165889|4.00, 12345678|2.00, 123456789|1.00)
-                    3. Correggi eventuali errori visivi (es. la stanghetta del cursore letta come '1' all'inizio del codice).
-                    4. LUNGHEZZA CODICI: I codici validi possono avere 8, 9 o 13 cifre. Estraili tutti mantenendo la loro lunghezza originale. SOLO se trovi un codice anomalo di 14 o 15 cifre (solitamente causato da un errore di lettura del cursore), rimuovi i numeri in eccesso all'inizio per riportarlo a 13 cifre.
-                    5. Le quantità devono usare il PUNTO per i decimali (es. 10.00). Se la quantità è un numero intero (es. 4) scrivi 4.00.
-                    6. RESTITUISCI SOLO LA LISTA, nessuna frase introduttiva.
-                    """
+                    # --- IL CERVELLO DELL'IA CAMBIA IN BASE ALLA SCELTA ---
+                    if modalita == "EAN + Quantità (Formato Gestionale TXT)":
+                        prompt = """
+                        Sei un estrattore di dati professionale. Guarda questo documento.
+                        Contiene codici a barre (EAN o interni) e le relative quantità.
+                        
+                        ISTRUZIONI TASSATIVE:
+                        1. Estrai tutte le coppie: Codice e Quantità.
+                        2. Scrivi una coppia per riga usando il separatore | (es: 8058664165889|4.00, 12345678|2.00, 123456789|1.00)
+                        3. Correggi eventuali errori visivi (es. la stanghetta del cursore letta come '1' all'inizio del codice).
+                        4. LUNGHEZZA CODICI: I codici validi possono avere 8, 9 o 13 cifre. Estraili tutti mantenendo la loro lunghezza originale. SOLO se trovi un codice anomalo di 14 o 15 cifre, rimuovi i numeri in eccesso all'inizio per riportarlo a 13 cifre.
+                        5. Le quantità devono usare il PUNTO per i decimali (es. 10.00). Se la quantità è un numero intero (es. 4) scrivi 4.00.
+                        6. RESTITUISCI SOLO LA LISTA, nessuna frase introduttiva.
+                        """
+                        nome_file_download = "ean_quantita.txt"
+                        
+                    else:
+                        # Modalità "Solo EAN"
+                        prompt = """
+                        Sei un estrattore di dati professionale. Guarda questo documento.
+                        Contiene codici a barre (EAN o interni) e quantità.
+                        
+                        ISTRUZIONI TASSATIVE:
+                        1. Estrai ESCLUSIVAMENTE i codici a barre. IGNORA completamente le quantità, i prezzi o altri testi.
+                        2. Scrivi un solo codice per riga (es: 8058664165889). Nessun altro carattere, nessuno spazio, niente separatori.
+                        3. Correggi eventuali errori visivi (es. la stanghetta del cursore letta come '1' all'inizio del codice).
+                        4. LUNGHEZZA CODICI: I codici validi possono avere 8, 9 o 13 cifre. Estraili tutti mantenendo la loro lunghezza originale. SOLO se trovi un codice anomalo di 14 o 15 cifre, rimuovi i numeri in eccesso all'inizio per riportarlo a 13 cifre.
+                        5. RESTITUISCI SOLO LA LISTA DEI CODICI, nessuna frase introduttiva.
+                        """
+                        nome_file_download = "solo_ean.csv"
                     
                     try:
                         if uploaded_file.name.lower().endswith('.pdf'):
@@ -91,17 +116,17 @@ with col_destra:
                             
                         response = model.generate_content(input_dati)
                         risultato = response.text.strip()
-                        risultato = risultato.replace("```text", "").replace("```", "").strip()
+                        risultato = risultato.replace("```text", "").replace("```csv", "").replace("```", "").strip()
                         
                         st.success("✅ Estrazione completata con successo!")
                         
                         st.text_area("Anteprima Dati Estratti:", value=risultato, height=350)
                         
                         st.download_button(
-                            label="📥 Scarica File TXT Pronto",
+                            label=f"📥 Scarica File Pronto ({nome_file_download})",
                             data=risultato,
-                            file_name="ean_quantita.txt",
-                            mime="text/plain",
+                            file_name=nome_file_download,
+                            mime="text/csv" if "csv" in nome_file_download else "text/plain",
                             use_container_width=True
                         )
                         
